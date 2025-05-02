@@ -1,11 +1,16 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { SessionsService } from './sessions.service';
 import { SessionsController } from './sessions.controller';
 import { SessionsGateway } from './sessions.gateway';
-import { PrismaModule } from '../prisma/prisma.module';
+import { Session } from './entities/session.entity';
+import { SongsModule } from '../songs/songs.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [
+    TypeOrmModule.forFeature([Session]),
+    SongsModule,
+  ],
   controllers: [SessionsController],
   providers: [SessionsService, SessionsGateway],
   exports: [SessionsService],

@@ -1,30 +1,37 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Like } from 'typeorm';
+import { Song } from './entities/song.entity';
 
 @Injectable()
 export class SongsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Song)
+    private songsRepository: Repository<Song>,
+  ) {}
 
-  async search(query: string) {
-    return this.prisma.song.findMany({
-      where: {
-        OR: [
-          { title: { contains: query, mode: 'insensitive' } },
-          { artist: { contains: query, mode: 'insensitive' } },
-        ],
-      },
-      select: {
-        id: true,
-        title: true,
-        artist: true,
-        imageUrl: true,
-      },
-    });
+  async findAll(): Promise<Song[]> {
+    return this.songsRepository.find();
   }
 
-  async findOne(id: string) {
-    return this.prisma.song.findUnique({
+  async findOne(id: string): Promise<Song> {
+    const song = await this.songsRepository.findOne({
       where: { id },
+    });
+
+    if (!song) {
+      throw new NotFoundException('Song not found');
+    }
+
+    return song;
+  }
+
+  async search(query: string): Promise<Song[]> {
+    return this.songsRepository.find({
+      where: [
+        { title: Like(`%${query}%`) },
+        { artist: Like(`%${query}%`) },
+      ],
     });
   }
 } 

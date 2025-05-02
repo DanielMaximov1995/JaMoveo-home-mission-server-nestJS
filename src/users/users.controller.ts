@@ -1,12 +1,15 @@
 import { Controller, Post, Body, UseGuards, Get, Request } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { AuthGuard } from '@nestjs/passport';
+import { AuthService } from '../auth/auth.service';
 import { LocalAuthGuard } from '../auth/guards/local-auth.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Post('signup')
   async signup(
@@ -15,13 +18,15 @@ export class UsersController {
     @Body('instrument') instrument: string,
     @Body('isAdmin') isAdmin: boolean = false,
   ) {
-    return this.usersService.create(username, password, instrument, isAdmin);
+    const user = await this.usersService.create(username, password, instrument, isAdmin);
+    const { password: _, ...result } = user;
+    return result;
   }
 
   @UseGuards(LocalAuthGuard)
   @Post('login')
   async login(@Request() req) {
-    return req.user;
+    return this.authService.login(req.user);
   }
 
   @UseGuards(JwtAuthGuard)
